@@ -38,6 +38,8 @@ pip install -e ".[dev]"
 python main.py
 ```
 
+Windows/Linux: use **Ctrl**. macOS: use **Cmd** for shortcuts.
+
 1. Type or paste your post into the editor.
 2. Select text and apply styling (Bold, Italic, etc.) from the toolbar.
 3. Insert em dashes or separators at the cursor.

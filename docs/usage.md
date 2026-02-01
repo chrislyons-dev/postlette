@@ -2,6 +2,8 @@
 
 ## Keyboard shortcuts
 
+Windows/Linux: use **Ctrl**. macOS: use **Cmd**.
+
 - `Ctrl/Cmd+B` — Bold (selection only)
 - `Ctrl/Cmd+I` — Italic (selection only)
 - `Ctrl/Cmd+Shift+B` — Bold-Italic (selection only)
