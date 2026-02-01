@@ -10,6 +10,10 @@ dependencies = [
     "typing-extensions>=4.4",
 ]
 
+[project.urls]
+Homepage = "https://chrislyons-dev.github.io/postlette/"
+Repository = "https://github.com/chrislyons-dev/postlette"
+
 [project.optional-dependencies]
 dev = [
     "build>=1.2",

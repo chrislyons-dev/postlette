@@ -1,10 +1,16 @@
 # Postlette
 
+![Postlette logo](https://raw.githubusercontent.com/chrislyons-dev/postlette/main/docs/images/logo-dark-navy.png)
+
 A tiny desktop editor that adds Unicode emphasis for social posts.
 
 Postlette uses Unicode characters, not rich text formatting. Type your post, style selected text with bold or italic, insert separators, and copy the result. Platforms may render these characters differently.
 
 Rendering varies by platform.
+
+Links:
+- Docs: https://chrislyons-dev.github.io/postlette/
+- Repo: https://github.com/chrislyons-dev/postlette
 
 ## Setup
 
