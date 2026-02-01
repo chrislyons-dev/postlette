@@ -31,7 +31,11 @@ jobs:
 
       - name: Build (PyInstaller)
         run: |
-          pyinstaller --onefile --windowed --name postlette main.py
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            pyinstaller --onefile --windowed --name postlette --icon docs/images/logo-dark-navy.ico main.py
+          else
+            pyinstaller --onefile --windowed --name postlette --icon docs/images/logo-dark-navy.icns main.py
+          fi
 
       - name: Create checksum
         shell: bash

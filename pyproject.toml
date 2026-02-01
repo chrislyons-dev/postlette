@@ -13,6 +13,8 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "build>=1.2",
+    "cairosvg>=2.7",
+    "pillow>=10.0",
     "mkdocs>=1.5",
     "mkdocs-material>=9.5",
     "pytest>=7.0",

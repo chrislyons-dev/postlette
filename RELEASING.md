@@ -24,3 +24,7 @@ Short checklist for the tag-driven release workflow.
 - Generates SHA-256 checksums.
 - Creates a GitHub Release with auto-generated notes.
 - Publishes sdist/wheel to PyPI.
+
+Notes:
+- Windows build uses `docs/images/logo-dark-navy.ico` as the app icon.
+- macOS build uses `docs/images/logo-dark-navy.icns` as the app icon.

@@ -23,6 +23,21 @@ TASKS: dict[str, list[list[str]]] = {
         [PYTHON, "-m", "pip_audit", "--skip-editable"],
     ],
     "audit": [[PYTHON, "-m", "pip_audit", "--skip-editable"]],
+    "icons": [[PYTHON, "scripts/convert_icon.py"]],
+    "build": [
+        [
+            PYTHON,
+            "-m",
+            "PyInstaller",
+            "--onefile",
+            "--windowed",
+            "--name",
+            "postlette",
+            "--icon",
+            "docs/images/logo-dark-navy.ico",
+            "main.py",
+        ]
+    ],
     "docs-serve": [[PYTHON, "-m", "mkdocs", "serve"]],
     "docs-build": [[PYTHON, "-m", "mkdocs", "build", "--strict"]],
     "run": [[PYTHON, "main.py"]],
@@ -36,6 +51,16 @@ def main() -> None:
         sys.exit(1)
 
     task = sys.argv[1]
+    if task == "icons":
+        if len(sys.argv) < 4:
+            print(
+                "Usage: python tasks.py icons <svg_path> <background> "
+                "[--output-dir DIR] [--base-name NAME]"
+            )
+            sys.exit(2)
+        cmd = TASKS[task][0] + sys.argv[2:]
+        result = subprocess.run(cmd, cwd=ROOT)
+        sys.exit(result.returncode)
     for cmd in TASKS[task]:
         result = subprocess.run(cmd, cwd=ROOT)
         if result.returncode != 0:

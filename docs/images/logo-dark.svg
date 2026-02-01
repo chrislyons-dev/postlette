@@ -8,7 +8,7 @@
   <!-- Mark -->
   <text x="128" y="156"
         text-anchor="middle"
-        font-family="Inter, system-ui, -apple-system, 'Segoe UI', Arial, sans-serif"
+        font-family="Sans"
         font-size="104"
         font-weight="700"
         fill="#F8FAFC"

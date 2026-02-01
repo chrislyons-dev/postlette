@@ -67,6 +67,14 @@ python tasks.py fix     # auto-fix
 python tasks.py audit
 ```
 
+## Icons
+
+Convert an SVG into PNG + ICO + ICNS (dev-only deps):
+
+```bash
+python tasks.py icons .\docs\images\logo-dark.svg transparent
+```
+
 ## Docs (MkDocs)
 
 Serve locally:
@@ -104,11 +112,15 @@ See `RELEASING.md` for the full checklist.
 
 Standalone executables are built with PyInstaller. Each OS requires its own build.
 
+```bash
+python tasks.py build
+```
+
 ### Windows
 
 ```bash
 pip install pyinstaller
-pyinstaller --onefile --windowed --name postlette main.py
+pyinstaller --onefile --windowed --name postlette --icon docs/images/logo-dark-navy.ico main.py
 ```
 
 The executable will be in `dist/postlette.exe`.

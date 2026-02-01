@@ -46,4 +46,7 @@ htmlcov/
 .ruff_cache/
 .claude
 claude.md
+notes/
 notes/*
+site/
+site/*
