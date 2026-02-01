@@ -98,6 +98,8 @@ The release workflow will:
 - Create a GitHub Release with auto-generated notes.
 - Publish sdist/wheel to PyPI via Trusted Publishing.
 
+See `RELEASING.md` for the full checklist.
+
 ## Build
 
 Standalone executables are built with PyInstaller. Each OS requires its own build.
