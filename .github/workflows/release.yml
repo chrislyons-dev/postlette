@@ -92,12 +92,29 @@ jobs:
         with:
           path: artifacts
 
+      - name: Prepare release assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release_assets
+
+          # Windows artifacts
+          cp artifacts/postlette-windows-latest/postlette.exe release_assets/
+          cp artifacts/postlette-windows-latest/postlette-windows-latest.sha256 release_assets/
+
+          # macOS artifacts (zip the .app bundle to avoid directory uploads)
+          (cd artifacts/postlette-macos-latest && zip -r ../../release_assets/postlette-macos.app.zip postlette.app)
+          cp artifacts/postlette-macos-latest/postlette-macos-latest.sha256 release_assets/
+
+          # PyPI artifacts
+          cp artifacts/postlette-pypi/* release_assets/
+
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
           files: |
-            artifacts/**/*
+            release_assets/*
 
   publish-pypi:
     name: Publish to PyPI
