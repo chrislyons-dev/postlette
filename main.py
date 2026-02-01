@@ -57,6 +57,19 @@ def apply_bold_italic(text: str) -> str:
     return "".join(_BOLD_ITALIC_MAP.get(c, c) for c in text)
 
 
+# Reverse map: styled Unicode char → original ASCII. Built from all style maps
+# so unstyle works regardless of which style was applied.
+_UNSTYLE_MAP: dict[str, str] = {}
+for _style_map in (_BOLD_MAP, _ITALIC_MAP, _BOLD_ITALIC_MAP):
+    for _ascii, _styled in _style_map.items():
+        _UNSTYLE_MAP[_styled] = _ascii
+
+
+def apply_unstyle(text: str) -> str:
+    """Revert any Postlette-styled characters back to ASCII. Leave everything else unchanged."""
+    return "".join(_UNSTYLE_MAP.get(c, c) for c in text)
+
+
 # Brand palette
 INK_NAVY = "#0F172A"
 PAPER = "#F8FAFC"
@@ -120,6 +133,12 @@ class PostletteWindow(QMainWindow):
         bold_italic_btn.clicked.connect(self._apply_bold_italic)
         toolbar.addWidget(bold_italic_btn)
 
+        unstyle_btn = QPushButton("Unstyle")
+        unstyle_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        unstyle_btn.setProperty("class", "toolbar-btn")
+        unstyle_btn.clicked.connect(self._apply_unstyle)
+        toolbar.addWidget(unstyle_btn)
+
         toolbar.addStretch()
         layout.addLayout(toolbar)
 
@@ -166,6 +185,11 @@ class PostletteWindow(QMainWindow):
         bold_italic_action.setShortcut("Ctrl+Shift+B")
         bold_italic_action.triggered.connect(self._apply_bold_italic)
         self.addAction(bold_italic_action)
+
+        unstyle_action = QAction(self)
+        unstyle_action.setShortcut("Ctrl+Shift+U")
+        unstyle_action.triggered.connect(self._apply_unstyle)
+        self.addAction(unstyle_action)
 
         self._apply_stylesheet()
 
@@ -235,6 +259,10 @@ class PostletteWindow(QMainWindow):
     def _apply_bold_italic(self) -> None:
         """Apply Unicode bold-italic to the selected text. Do nothing if no selection."""
         self._transform_selection(apply_bold_italic)
+
+    def _apply_unstyle(self) -> None:
+        """Revert styled characters in the selection back to ASCII."""
+        self._transform_selection(apply_unstyle)
 
     def _transform_selection(self, transform: Callable[[str], str]) -> None:
         """Apply a text transform to the current selection, preserving selection."""
