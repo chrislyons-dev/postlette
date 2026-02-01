@@ -1,6 +1,7 @@
 """Postlette — Unicode polish for social posts."""
 
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 from PySide6.QtCore import Qt
@@ -16,6 +17,20 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+# Unicode Mathematical Bold offsets
+# A-Z → U+1D400..U+1D419, a-z → U+1D41A..U+1D433, 0-9 → U+1D7CE..U+1D7D7
+_BOLD_MAP: dict[str, str] = {}
+for _i, _c in enumerate("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"):
+    _BOLD_MAP[_c] = chr(0x1D400 + _i)
+for _i in range(10):
+    _BOLD_MAP[str(_i)] = chr(0x1D7CE + _i)
+
+
+def apply_bold(text: str) -> str:
+    """Map A-Z, a-z, 0-9 to Unicode Mathematical Bold. Leave everything else unchanged."""
+    return "".join(_BOLD_MAP.get(c, c) for c in text)
+
 
 # Brand palette
 INK_NAVY = "#0F172A"
@@ -62,6 +77,12 @@ class PostletteWindow(QMainWindow):
         separator_btn.clicked.connect(lambda: self._insert_text("────────"))
         toolbar.addWidget(separator_btn)
 
+        bold_btn = QPushButton("Bold")
+        bold_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        bold_btn.setProperty("class", "toolbar-btn")
+        bold_btn.clicked.connect(self._apply_bold)
+        toolbar.addWidget(bold_btn)
+
         toolbar.addStretch()
         layout.addLayout(toolbar)
 
@@ -88,11 +109,16 @@ class PostletteWindow(QMainWindow):
         self.status_bar.addPermanentWidget(self.char_count_label)
         self.status_bar.showMessage("Ready")
 
-        # Keyboard shortcut: Ctrl+Shift+C to copy
+        # Keyboard shortcuts
         copy_action = QAction(self)
         copy_action.setShortcut("Ctrl+Shift+C")
         copy_action.triggered.connect(self._copy_to_clipboard)
         self.addAction(copy_action)
+
+        bold_action = QAction(self)
+        bold_action.setShortcut("Ctrl+B")
+        bold_action.triggered.connect(self._apply_bold)
+        self.addAction(bold_action)
 
         self._apply_stylesheet()
 
@@ -150,6 +176,28 @@ class PostletteWindow(QMainWindow):
                 font-size: 12px;
             }}
         """)
+
+    def _apply_bold(self) -> None:
+        """Apply Unicode bold to the selected text. Do nothing if no selection."""
+        self._transform_selection(apply_bold)
+
+    def _transform_selection(self, transform: Callable[[str], str]) -> None:
+        """Apply a text transform to the current selection, preserving selection."""
+        cursor = self.editor.textCursor()
+        if not cursor.hasSelection():
+            self.status_bar.showMessage("Select text to style.", 3000)
+            return
+        start = cursor.selectionStart()
+        selected = cursor.selectedText()
+        transformed = transform(selected)
+        cursor.insertText(transformed)
+        # Re-select the transformed text. Qt cursor positions are in UTF-16 code
+        # units, so supplementary-plane characters (e.g. math bold) count as 2.
+        utf16_len = len(transformed.encode("utf-16-le")) // 2
+        cursor.setPosition(start)
+        cursor.setPosition(start + utf16_len, cursor.MoveMode.KeepAnchor)
+        self.editor.setTextCursor(cursor)
+        self.editor.setFocus()
 
     def _insert_text(self, text: str) -> None:
         """Insert text at the current cursor position, replacing any selection."""

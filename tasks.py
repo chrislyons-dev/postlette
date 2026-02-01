@@ -7,11 +7,21 @@ from pathlib import Path
 ROOT = Path(__file__).parent
 PYTHON = str(ROOT / ".venv" / "Scripts" / "python.exe")
 
-TASKS: dict[str, list[str]] = {
-    "test": [PYTHON, "-m", "pytest", "tests/", "-v"],
-    "lint": [PYTHON, "-m", "ruff", "check", "."],
-    "fix": [PYTHON, "-m", "ruff", "check", "--fix", "."],
-    "run": [PYTHON, "main.py"],
+TASKS: dict[str, list[list[str]]] = {
+    "test": [[PYTHON, "-m", "pytest", "tests/", "-v"]],
+    "lint": [[PYTHON, "-m", "ruff", "check", "."]],
+    "format": [[PYTHON, "-m", "ruff", "format", "."]],
+    "format-check": [[PYTHON, "-m", "ruff", "format", "--check", "."]],
+    "fix": [
+        [PYTHON, "-m", "ruff", "check", "--fix", "."],
+        [PYTHON, "-m", "ruff", "format", "."],
+    ],
+    "check": [
+        [PYTHON, "-m", "ruff", "format", "--check", "."],
+        [PYTHON, "-m", "ruff", "check", "."],
+        [PYTHON, "-m", "pytest", "tests/", "-v"],
+    ],
+    "run": [[PYTHON, "main.py"]],
 }
 
 
@@ -22,8 +32,10 @@ def main() -> None:
         sys.exit(1)
 
     task = sys.argv[1]
-    result = subprocess.run(TASKS[task], cwd=ROOT)
-    sys.exit(result.returncode)
+    for cmd in TASKS[task]:
+        result = subprocess.run(cmd, cwd=ROOT)
+        if result.returncode != 0:
+            sys.exit(result.returncode)
 
 
 if __name__ == "__main__":
