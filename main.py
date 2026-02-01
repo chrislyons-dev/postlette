@@ -1,5 +1,6 @@
 """Postlette — Unicode polish for social posts."""
 
+import re
 import sys
 from collections.abc import Callable
 from pathlib import Path
@@ -18,10 +19,12 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QMainWindow,
+    QMenu,
     QMessageBox,
     QPlainTextEdit,
     QPushButton,
     QStatusBar,
+    QToolButton,
     QVBoxLayout,
     QWidget,
 )
@@ -143,6 +146,23 @@ class PostletteWindow(QMainWindow):
         theme_btn.clicked.connect(self._toggle_theme)
         toolbar.addWidget(theme_btn)
 
+        self.list_menu = QMenu(self)
+        bullets_action = self.list_menu.addAction("Bulleted list")
+        numbers_action = self.list_menu.addAction("Numbered list")
+        dashes_action = self.list_menu.addAction("Dashed list")
+        bullets_action.triggered.connect(lambda: self._insert_list("Bullets"))
+        numbers_action.triggered.connect(lambda: self._insert_list("Numbers"))
+        dashes_action.triggered.connect(lambda: self._insert_list("Dashes"))
+
+        list_btn = QToolButton()
+        list_btn.setText("List ▾")
+        list_btn.setToolTip("Insert list")
+        list_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        list_btn.setProperty("class", "toolbar-btn")
+        list_btn.setMenu(self.list_menu)
+        list_btn.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        toolbar.addWidget(list_btn)
+
         em_dash_btn = QPushButton("Em Dash —")
         em_dash_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         em_dash_btn.setToolTip("Insert em dash")
@@ -196,7 +216,7 @@ class PostletteWindow(QMainWindow):
         layout.addLayout(toolbar)
 
         # Editor
-        self.editor = QPlainTextEdit()
+        self.editor = ListEditor()
         self.editor.setPlaceholderText("Start typing your post...")
         self.editor.setFont(QFont("Segoe UI", 12))
         self.editor.textChanged.connect(self._on_text_changed)
@@ -312,6 +332,32 @@ class PostletteWindow(QMainWindow):
                 background-color: {theme["focus"]};
                 color: white;
             }}
+            QToolButton {{
+                background-color: {theme["toolbar_bg"]};
+                color: {theme["toolbar_text"]};
+                border: 1px solid {theme["toolbar_border"]};
+                border-radius: 4px;
+                font-weight: 600;
+                font-size: 12px;
+                padding: 4px 12px;
+            }}
+            QToolButton:hover {{
+                background-color: {theme["window_bg"]};
+                border-color: {theme["focus"]};
+            }}
+            QToolButton:pressed {{
+                background-color: {theme["focus"]};
+                color: white;
+            }}
+            QMenu {{
+                background-color: {theme["toolbar_bg"]};
+                color: {theme["toolbar_text"]};
+                border: 1px solid {theme["toolbar_border"]};
+            }}
+            QMenu::item:selected {{
+                background-color: {theme["focus"]};
+                color: white;
+            }}
             QStatusBar {{
                 background-color: {theme["status_bg"]};
                 color: {theme["status_text"]};
@@ -362,7 +408,7 @@ class PostletteWindow(QMainWindow):
 
     def _apply_unstyle(self) -> None:
         """Revert styled characters in the selection back to ASCII."""
-        self._transform_selection(apply_unstyle)
+        self._transform_selection(self._unstyle_with_lists)
 
     def _open_emoji_picker(self) -> None:
         """Open the emoji picker dialog and insert the selected emoji at cursor."""
@@ -388,11 +434,64 @@ class PostletteWindow(QMainWindow):
         self.editor.setTextCursor(cursor)
         self.editor.setFocus()
 
+    def _unstyle_with_lists(self, text: str) -> str:
+        """Revert styled characters and remove list prefixes in selected lines."""
+        lines = text.replace("\u2029", "\n").splitlines()
+        cleaned = []
+        list_prefix_re = re.compile(r"^(?P<indent>\s*)(?:\u2022\s|-\s|\d+\.\s)")
+        for line in lines:
+            cleaned.append(list_prefix_re.sub(r"\g<indent>", line))
+        return apply_unstyle("\n".join(cleaned))
+
     def _insert_text(self, text: str) -> None:
         """Insert text at the current cursor position, replacing any selection."""
         cursor = self.editor.textCursor()
         cursor.insertText(text)
         self.editor.setTextCursor(cursor)
+        self.editor.setFocus()
+
+    def _insert_list(self, style: str) -> None:
+        """Insert list markers for the current line or selected lines."""
+        is_numbers = style.startswith("Numbers")
+        prefix = "- " if style.startswith("Dashes") else "\u2022 "
+        list_prefix_re = re.compile(r"^(?P<indent>\s*)(?:\u2022\s|-\s|\d+\.\s)(?P<rest>.*)$")
+
+        cursor = self.editor.textCursor()
+        if cursor.hasSelection():
+            start = cursor.selectionStart()
+            selected = cursor.selectedText().replace("\u2029", "\n")
+            lines = selected.splitlines()
+            if not lines:
+                return
+            cleaned_lines = []
+            for line in lines:
+                match = list_prefix_re.match(line)
+                if match:
+                    cleaned_lines.append(f"{match.group('indent')}{match.group('rest')}")
+                else:
+                    cleaned_lines.append(line)
+            if is_numbers:
+                transformed = "\n".join(
+                    f"{idx + 1}. {line}" for idx, line in enumerate(cleaned_lines)
+                )
+            else:
+                transformed = "\n".join(f"{prefix}{line}" for line in cleaned_lines)
+            cursor.insertText(transformed)
+            utf16_len = len(transformed.encode("utf-16-le")) // 2
+            cursor.setPosition(start)
+            cursor.setPosition(start + utf16_len, cursor.MoveMode.KeepAnchor)
+            self.editor.setTextCursor(cursor)
+        else:
+            cursor.movePosition(cursor.MoveOperation.StartOfLine)
+            line_text = cursor.block().text()
+            match = list_prefix_re.match(line_text)
+            if match:
+                cursor.movePosition(cursor.MoveOperation.EndOfLine, cursor.MoveMode.KeepAnchor)
+                cursor.removeSelectedText()
+                cursor.insertText(f"{match.group('indent')}{match.group('rest')}")
+                cursor.movePosition(cursor.MoveOperation.StartOfLine)
+            cursor.insertText(prefix)
+            self.editor.setTextCursor(cursor)
         self.editor.setFocus()
 
     def _copy_to_clipboard(self) -> None:
@@ -496,6 +595,50 @@ class PostletteWindow(QMainWindow):
             event.accept()
         else:
             event.ignore()
+
+
+class ListEditor(QPlainTextEdit):
+    """Plain text editor with simple list continuation behavior."""
+
+    _bullet_re = re.compile(r"^(?P<indent>\s*)\u2022\s(?P<rest>.*)$")
+    _dash_re = re.compile(r"^(?P<indent>\s*)-\s(?P<rest>.*)$")
+    _number_re = re.compile(r"^(?P<indent>\s*)(?P<num>\d+)\.\s(?P<rest>.*)$")
+
+    @override
+    def keyPressEvent(self, event) -> None:
+        if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            cursor = self.textCursor()
+            block_text = cursor.block().text()
+            if cursor.positionInBlock() == len(block_text):
+                match = (
+                    self._number_re.match(block_text)
+                    or self._bullet_re.match(block_text)
+                    or self._dash_re.match(block_text)
+                )
+                if match:
+                    indent = match.group("indent")
+                    rest = match.group("rest")
+                    if rest.strip() == "":
+                        cursor.movePosition(cursor.MoveOperation.StartOfBlock)
+                        cursor.movePosition(
+                            cursor.MoveOperation.EndOfBlock, cursor.MoveMode.KeepAnchor
+                        )
+                        cursor.removeSelectedText()
+                        cursor.insertText(indent)
+                        cursor.insertText("\n")
+                        self.setTextCursor(cursor)
+                        return
+                    if "num" in match.groupdict() and match.group("num") is not None:
+                        next_num = int(match.group("num")) + 1
+                        prefix = f"{next_num}. "
+                    elif match.re is self._dash_re:
+                        prefix = "- "
+                    else:
+                        prefix = "\u2022 "
+                    cursor.insertText(f"\n{indent}{prefix}")
+                    self.setTextCursor(cursor)
+                    return
+        super().keyPressEvent(event)
 
 
 def main() -> None:
