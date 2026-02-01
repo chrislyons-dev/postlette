@@ -3,7 +3,11 @@
 import sys
 from collections.abc import Callable
 from pathlib import Path
-from typing import override
+
+try:
+    from typing import override
+except ImportError:  # Python < 3.11
+    from typing_extensions import override
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QColor, QFont, QIcon, QPalette

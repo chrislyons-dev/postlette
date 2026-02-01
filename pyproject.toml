@@ -3,10 +3,11 @@ name = "postlette"
 version = "0.1.0"
 description = "A tiny desktop editor that adds Unicode emphasis for social posts."
 readme = "README.md"
-license = {text = "MIT"}
+license = "MIT"
 requires-python = ">=3.10"
 dependencies = [
     "PySide6>=6.6",
+    "typing-extensions>=4.4",
 ]
 
 [project.optional-dependencies]
@@ -18,6 +19,9 @@ dev = [
     "ruff>=0.4",
     "pip-audit>=2.7",
 ]
+
+[tool.setuptools]
+py-modules = ["main", "emoji_picker", "emoji_data", "unicode_styles"]
 
 [tool.ruff]
 line-length = 99
