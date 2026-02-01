@@ -7,7 +7,7 @@ from main import PostletteWindow
 
 class TestWindowSetup:
     def test_window_title(self, window: PostletteWindow) -> None:
-        assert window.windowTitle() == "Postlette"
+        assert window.windowTitle() == "Postlette — Untitled"
 
     def test_minimum_size(self, window: PostletteWindow) -> None:
         assert window.minimumWidth() == 520

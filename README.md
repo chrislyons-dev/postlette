@@ -41,7 +41,8 @@ python main.py
 1. Type or paste your post into the editor.
 2. Select text and apply styling (Bold, Italic, etc.) from the toolbar.
 3. Insert em dashes or separators at the cursor.
-4. Click **Copy** (or press `Ctrl+Shift+C`) to copy the result to your clipboard.
+4. Use 📂 to open a `.txt` file or 💾 to save your work (shortcuts: `Ctrl+O`, `Ctrl+S`, `Ctrl+Shift+S`).
+5. Click **Copy** (or press `Ctrl+Shift+C`) to copy the result to your clipboard.
 
 Use styling sparingly for readability.
 

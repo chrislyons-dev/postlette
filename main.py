@@ -3,15 +3,18 @@
 import sys
 from collections.abc import Callable
 from pathlib import Path
+from typing import override
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QColor, QFont, QIcon, QPalette
 from PySide6.QtWidgets import (
     QApplication,
     QDialog,
+    QFileDialog,
     QHBoxLayout,
     QLabel,
     QMainWindow,
+    QMessageBox,
     QPlainTextEdit,
     QPushButton,
     QStatusBar,
@@ -41,6 +44,9 @@ class PostletteWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Postlette")
         self.setMinimumSize(520, 400)
+        self._current_path: Path | None = None
+        self._dirty = False
+        self._suspend_dirty = False
 
         # Window icon — light variant (dark marks) for the light UI background
         icon_path = Path(__file__).parent / "docs" / "images" / "logo-light.svg"
@@ -48,6 +54,7 @@ class PostletteWindow(QMainWindow):
             self.setWindowIcon(QIcon(str(icon_path)))
         self._build_ui()
         self._update_char_count()
+        self._update_window_title()
 
     def _build_ui(self) -> None:
         central = QWidget()
@@ -59,6 +66,20 @@ class PostletteWindow(QMainWindow):
         # Toolbar
         toolbar = QHBoxLayout()
         toolbar.setSpacing(6)
+
+        open_btn = QPushButton("📂")
+        open_btn.setToolTip("Open")
+        open_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        open_btn.setProperty("class", "toolbar-btn")
+        open_btn.clicked.connect(self._open_file)
+        toolbar.addWidget(open_btn)
+
+        save_btn = QPushButton("💾")
+        save_btn.setToolTip("Save")
+        save_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        save_btn.setProperty("class", "toolbar-btn")
+        save_btn.clicked.connect(self._save_file)
+        toolbar.addWidget(save_btn)
 
         em_dash_btn = QPushButton("Em Dash —")
         em_dash_btn.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -109,7 +130,7 @@ class PostletteWindow(QMainWindow):
         self.editor = QPlainTextEdit()
         self.editor.setPlaceholderText("Start typing your post...")
         self.editor.setFont(QFont("Segoe UI", 12))
-        self.editor.textChanged.connect(self._update_char_count)
+        self.editor.textChanged.connect(self._on_text_changed)
         layout.addWidget(self.editor)
 
         # Copy button
@@ -153,6 +174,21 @@ class PostletteWindow(QMainWindow):
         unstyle_action.setShortcut("Ctrl+Shift+U")
         unstyle_action.triggered.connect(self._apply_unstyle)
         self.addAction(unstyle_action)
+
+        open_action = QAction(self)
+        open_action.setShortcut("Ctrl+O")
+        open_action.triggered.connect(self._open_file)
+        self.addAction(open_action)
+
+        save_action = QAction(self)
+        save_action.setShortcut("Ctrl+S")
+        save_action.triggered.connect(self._save_file)
+        self.addAction(save_action)
+
+        save_as_action = QAction(self)
+        save_as_action.setShortcut("Ctrl+Shift+S")
+        save_as_action.triggered.connect(self._save_file_as)
+        self.addAction(save_as_action)
 
         self._apply_stylesheet()
 
@@ -266,6 +302,99 @@ class PostletteWindow(QMainWindow):
     def _update_char_count(self) -> None:
         count = len(self.editor.toPlainText())
         self.char_count_label.setText(f"{count} chars")
+
+    def _on_text_changed(self) -> None:
+        self._update_char_count()
+        if self._suspend_dirty:
+            return
+        if not self._dirty:
+            self._dirty = True
+            self._update_window_title()
+
+    def _update_window_title(self) -> None:
+        name = self._current_path.name if self._current_path else "Untitled"
+        marker = "*" if self._dirty else ""
+        self.setWindowTitle(f"Postlette — {name}{marker}")
+
+    def _confirm_discard_changes(self) -> bool:
+        if not self._dirty:
+            return True
+        reply = QMessageBox.question(
+            self,
+            "Discard changes?",
+            "Discard unsaved changes?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        return reply == QMessageBox.StandardButton.Yes
+
+    def _open_file(self) -> None:
+        if not self._confirm_discard_changes():
+            return
+        start_dir = str(self._current_path.parent) if self._current_path else ""
+        filename, _ = QFileDialog.getOpenFileName(
+            self,
+            "Open text file",
+            start_dir,
+            "Text files (*.txt)",
+        )
+        if not filename:
+            return
+        path = Path(filename)
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            self.status_bar.showMessage("Could not open file. Invalid encoding.", 5000)
+            return
+        except OSError:
+            self.status_bar.showMessage("Could not open file.", 5000)
+            return
+        self._suspend_dirty = True
+        self.editor.setPlainText(text)
+        self._suspend_dirty = False
+        self._dirty = False
+        self._current_path = path
+        self.status_bar.showMessage(f"Opened: {path.name}", 3000)
+        self._update_window_title()
+
+    def _save_file(self) -> None:
+        if self._current_path is None:
+            self._save_file_as()
+            return
+        self._save_to_path(self._current_path)
+
+    def _save_file_as(self) -> None:
+        start_dir = str(self._current_path.parent) if self._current_path else ""
+        filename, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save text file",
+            start_dir,
+            "Text files (*.txt)",
+        )
+        if not filename:
+            return
+        path = Path(filename)
+        if path.suffix == "":
+            path = path.with_suffix(".txt")
+        self._save_to_path(path)
+
+    def _save_to_path(self, path: Path) -> None:
+        try:
+            path.write_text(self.editor.toPlainText(), encoding="utf-8")
+        except OSError:
+            self.status_bar.showMessage("Could not save file.", 5000)
+            return
+        self._current_path = path
+        self._dirty = False
+        self.status_bar.showMessage(f"Saved: {path.name}", 3000)
+        self._update_window_title()
+
+    @override
+    def closeEvent(self, event) -> None:
+        if self._confirm_discard_changes():
+            event.accept()
+        else:
+            event.ignore()
 
 
 def main() -> None:

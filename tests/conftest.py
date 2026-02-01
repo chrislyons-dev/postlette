@@ -20,4 +20,7 @@ def qapp() -> QApplication:
 @pytest.fixture()
 def window(qapp: QApplication) -> PostletteWindow:
     """Fresh PostletteWindow for each test."""
-    return PostletteWindow()
+    window = PostletteWindow()
+    # Avoid modal prompts during tests.
+    window._confirm_discard_changes = lambda: True  # type: ignore[method-assign]
+    return window
