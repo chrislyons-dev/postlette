@@ -32,6 +32,31 @@ def apply_bold(text: str) -> str:
     return "".join(_BOLD_MAP.get(c, c) for c in text)
 
 
+# Unicode Mathematical Italic offsets (letters only — no reliable italic digit set)
+# A-Z → U+1D434..U+1D44D, a-z → U+1D44E..U+1D467
+# Exception: italic 'h' is U+210E (PLANCK CONSTANT), not U+1D455 (unassigned).
+_ITALIC_MAP: dict[str, str] = {}
+for _i, _c in enumerate("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"):
+    _ITALIC_MAP[_c] = chr(0x1D434 + _i)
+_ITALIC_MAP["h"] = "\u210e"
+
+# Unicode Mathematical Bold-Italic offsets (letters only)
+# A-Z → U+1D468..U+1D481, a-z → U+1D482..U+1D49B
+_BOLD_ITALIC_MAP: dict[str, str] = {}
+for _i, _c in enumerate("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"):
+    _BOLD_ITALIC_MAP[_c] = chr(0x1D468 + _i)
+
+
+def apply_italic(text: str) -> str:
+    """Map A-Z, a-z to Unicode Mathematical Italic. Leave everything else unchanged."""
+    return "".join(_ITALIC_MAP.get(c, c) for c in text)
+
+
+def apply_bold_italic(text: str) -> str:
+    """Map A-Z, a-z to Unicode Mathematical Bold-Italic. Leave everything else unchanged."""
+    return "".join(_BOLD_ITALIC_MAP.get(c, c) for c in text)
+
+
 # Brand palette
 INK_NAVY = "#0F172A"
 PAPER = "#F8FAFC"
@@ -83,6 +108,18 @@ class PostletteWindow(QMainWindow):
         bold_btn.clicked.connect(self._apply_bold)
         toolbar.addWidget(bold_btn)
 
+        italic_btn = QPushButton("Italic")
+        italic_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        italic_btn.setProperty("class", "toolbar-btn")
+        italic_btn.clicked.connect(self._apply_italic)
+        toolbar.addWidget(italic_btn)
+
+        bold_italic_btn = QPushButton("Bold-Italic")
+        bold_italic_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        bold_italic_btn.setProperty("class", "toolbar-btn")
+        bold_italic_btn.clicked.connect(self._apply_bold_italic)
+        toolbar.addWidget(bold_italic_btn)
+
         toolbar.addStretch()
         layout.addLayout(toolbar)
 
@@ -119,6 +156,16 @@ class PostletteWindow(QMainWindow):
         bold_action.setShortcut("Ctrl+B")
         bold_action.triggered.connect(self._apply_bold)
         self.addAction(bold_action)
+
+        italic_action = QAction(self)
+        italic_action.setShortcut("Ctrl+I")
+        italic_action.triggered.connect(self._apply_italic)
+        self.addAction(italic_action)
+
+        bold_italic_action = QAction(self)
+        bold_italic_action.setShortcut("Ctrl+Shift+B")
+        bold_italic_action.triggered.connect(self._apply_bold_italic)
+        self.addAction(bold_italic_action)
 
         self._apply_stylesheet()
 
@@ -180,6 +227,14 @@ class PostletteWindow(QMainWindow):
     def _apply_bold(self) -> None:
         """Apply Unicode bold to the selected text. Do nothing if no selection."""
         self._transform_selection(apply_bold)
+
+    def _apply_italic(self) -> None:
+        """Apply Unicode italic to the selected text. Do nothing if no selection."""
+        self._transform_selection(apply_italic)
+
+    def _apply_bold_italic(self) -> None:
+        """Apply Unicode bold-italic to the selected text. Do nothing if no selection."""
+        self._transform_selection(apply_bold_italic)
 
     def _transform_selection(self, transform: Callable[[str], str]) -> None:
         """Apply a text transform to the current selection, preserving selection."""

@@ -17,8 +17,8 @@ TASKS: dict[str, list[list[str]]] = {
         [PYTHON, "-m", "ruff", "format", "."],
     ],
     "check": [
-        [PYTHON, "-m", "ruff", "format", "--check", "."],
-        [PYTHON, "-m", "ruff", "check", "."],
+        [PYTHON, "-m", "ruff", "format", "."],
+        [PYTHON, "-m", "ruff", "check", "--fix", "."],
         [PYTHON, "-m", "pytest", "tests/", "-v"],
     ],
     "run": [[PYTHON, "main.py"]],
