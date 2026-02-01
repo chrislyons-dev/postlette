@@ -4,13 +4,8 @@ import string
 
 from PySide6.QtGui import QTextCursor
 
-from main import (
-    PostletteWindow,
-    apply_bold,
-    apply_bold_italic,
-    apply_italic,
-    apply_unstyle,
-)
+from main import PostletteWindow
+from unicode_styles import apply_bold, apply_bold_italic, apply_italic, apply_unstyle
 
 
 class TestApplyUnstyleFunction:

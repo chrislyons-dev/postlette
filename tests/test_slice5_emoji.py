@@ -2,7 +2,9 @@
 
 from PySide6.QtWidgets import QDialog
 
-from main import EMOJI_DATA, EmojiPickerDialog, PostletteWindow
+from emoji_data import EMOJI_DATA
+from emoji_picker import EmojiPickerDialog
+from main import PostletteWindow
 
 
 class TestEmojiData:

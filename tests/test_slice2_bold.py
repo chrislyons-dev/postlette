@@ -2,7 +2,8 @@
 
 from PySide6.QtGui import QTextCursor
 
-from main import PostletteWindow, apply_bold
+from main import PostletteWindow
+from unicode_styles import apply_bold
 
 
 class TestApplyBoldFunction:

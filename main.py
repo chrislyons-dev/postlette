@@ -9,202 +9,23 @@ from PySide6.QtGui import QAction, QColor, QFont, QIcon, QPalette
 from PySide6.QtWidgets import (
     QApplication,
     QDialog,
-    QGridLayout,
     QHBoxLayout,
     QLabel,
-    QLineEdit,
     QMainWindow,
     QPlainTextEdit,
     QPushButton,
-    QScrollArea,
     QStatusBar,
     QVBoxLayout,
     QWidget,
 )
 
-# Unicode Mathematical Bold offsets
-# A-Z → U+1D400..U+1D419, a-z → U+1D41A..U+1D433, 0-9 → U+1D7CE..U+1D7D7
-_BOLD_MAP: dict[str, str] = {}
-for _i, _c in enumerate("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"):
-    _BOLD_MAP[_c] = chr(0x1D400 + _i)
-for _i in range(10):
-    _BOLD_MAP[str(_i)] = chr(0x1D7CE + _i)
-
-
-def apply_bold(text: str) -> str:
-    """Map A-Z, a-z, 0-9 to Unicode Mathematical Bold. Leave everything else unchanged."""
-    return "".join(_BOLD_MAP.get(c, c) for c in text)
-
-
-# Unicode Mathematical Italic offsets (letters only — no reliable italic digit set)
-# A-Z → U+1D434..U+1D44D, a-z → U+1D44E..U+1D467
-# Exception: italic 'h' is U+210E (PLANCK CONSTANT), not U+1D455 (unassigned).
-_ITALIC_MAP: dict[str, str] = {}
-for _i, _c in enumerate("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"):
-    _ITALIC_MAP[_c] = chr(0x1D434 + _i)
-_ITALIC_MAP["h"] = "\u210e"
-
-# Unicode Mathematical Bold-Italic offsets (letters only)
-# A-Z → U+1D468..U+1D481, a-z → U+1D482..U+1D49B
-_BOLD_ITALIC_MAP: dict[str, str] = {}
-for _i, _c in enumerate("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"):
-    _BOLD_ITALIC_MAP[_c] = chr(0x1D468 + _i)
-
-
-def apply_italic(text: str) -> str:
-    """Map A-Z, a-z to Unicode Mathematical Italic. Leave everything else unchanged."""
-    return "".join(_ITALIC_MAP.get(c, c) for c in text)
-
-
-def apply_bold_italic(text: str) -> str:
-    """Map A-Z, a-z to Unicode Mathematical Bold-Italic. Leave everything else unchanged."""
-    return "".join(_BOLD_ITALIC_MAP.get(c, c) for c in text)
-
-
-# Reverse map: styled Unicode char → original ASCII. Built from all style maps
-# so unstyle works regardless of which style was applied.
-_UNSTYLE_MAP: dict[str, str] = {}
-for _style_map in (_BOLD_MAP, _ITALIC_MAP, _BOLD_ITALIC_MAP):
-    for _ascii, _styled in _style_map.items():
-        _UNSTYLE_MAP[_styled] = _ascii
-
-
-def apply_unstyle(text: str) -> str:
-    """Revert any Postlette-styled characters back to ASCII. Leave everything else unchanged."""
-    return "".join(_UNSTYLE_MAP.get(c, c) for c in text)
-
-
-# Common emoji with search keywords. Standard Unicode only.
-EMOJI_DATA: list[tuple[str, str]] = [
-    # Smileys
-    ("\U0001f600", "grinning face happy smile"),
-    ("\U0001f602", "face tears joy laughing"),
-    ("\U0001f605", "sweat smile nervous laugh"),
-    ("\U0001f609", "winking face wink"),
-    ("\U0001f60a", "smiling blush happy"),
-    ("\U0001f60d", "heart eyes love"),
-    ("\U0001f60e", "sunglasses cool"),
-    ("\U0001f60f", "smirk smirking"),
-    ("\U0001f612", "unamused annoyed"),
-    ("\U0001f614", "pensive sad thoughtful"),
-    ("\U0001f618", "kiss blowing wink"),
-    ("\U0001f621", "angry rage mad"),
-    ("\U0001f622", "crying sad tear"),
-    ("\U0001f62d", "sobbing crying loud"),
-    ("\U0001f631", "scream fear shock"),
-    ("\U0001f634", "sleeping zzz tired"),
-    ("\U0001f914", "thinking hmm wonder"),
-    ("\U0001f923", "rofl rolling floor laughing"),
-    ("\U0001f929", "star struck excited wow"),
-    ("\U0001f970", "smiling hearts love adore"),
-    # Gestures
-    ("\U0001f44d", "thumbs up yes good approve"),
-    ("\U0001f44e", "thumbs down no bad disapprove"),
-    ("\U0001f44f", "clapping hands applause bravo"),
-    ("\U0001f64f", "pray please thanks folded hands"),
-    ("\U0001f4aa", "muscle strong flex bicep"),
-    ("\u270c\ufe0f", "victory peace sign"),
-    ("\U0001f44b", "wave hello goodbye hand"),
-    # Hearts & symbols
-    ("\u2764\ufe0f", "red heart love"),
-    ("\U0001f494", "broken heart sad"),
-    ("\U0001f525", "fire hot lit flame"),
-    ("\u2728", "sparkles stars magic"),
-    ("\U0001f4a1", "light bulb idea"),
-    ("\U0001f4a5", "boom explosion collision"),
-    ("\U0001f389", "party popper celebration tada"),
-    ("\U0001f3af", "bullseye target dart"),
-    ("\u2705", "check mark done yes green"),
-    ("\u274c", "cross mark no wrong red"),
-    ("\u26a0\ufe0f", "warning caution alert"),
-    ("\u2b50", "star gold favorite"),
-    # Objects
-    ("\U0001f4e3", "megaphone announcement shout"),
-    ("\U0001f4dd", "memo note writing pencil"),
-    ("\U0001f4f1", "phone mobile cell"),
-    ("\U0001f4e7", "email envelope mail"),
-    ("\U0001f517", "link chain url"),
-    ("\U0001f510", "lock key secure"),
-    # Nature & weather
-    ("\u2600\ufe0f", "sun sunny weather"),
-    ("\U0001f319", "moon crescent night"),
-    ("\u26a1", "lightning zap bolt thunder"),
-    # Arrows & misc
-    ("\u27a1\ufe0f", "right arrow forward"),
-    ("\U0001f449", "pointing right hand finger"),
-    ("\U0001f4cc", "pin pushpin location"),
-]
-
-
-class EmojiPickerDialog(QDialog):
-    """Searchable grid of common Unicode emoji."""
-
-    # Emitted value when an emoji is selected
-    selected_emoji: str = ""
-
-    COLUMNS = 8
-
-    def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-        self.setWindowTitle("Emoji")
-        self.setMinimumSize(360, 320)
-        self._build_ui()
-
-    def _build_ui(self) -> None:
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 12, 12, 12)
-        layout.setSpacing(8)
-
-        # Search field
-        self.search_field = QLineEdit()
-        self.search_field.setPlaceholderText("Search emoji...")
-        self.search_field.textChanged.connect(self._filter_emoji)
-        layout.addWidget(self.search_field)
-
-        # Scrollable emoji grid
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.grid_container = QWidget()
-        self.grid_layout = QGridLayout(self.grid_container)
-        self.grid_layout.setSpacing(4)
-        scroll.setWidget(self.grid_container)
-        layout.addWidget(scroll)
-
-        self._emoji_buttons: list[tuple[QPushButton, str]] = []
-        self._populate_grid(EMOJI_DATA)
-
-    def _populate_grid(self, emoji_list: list[tuple[str, str]]) -> None:
-        # Clear existing buttons
-        for btn, _ in self._emoji_buttons:
-            btn.setParent(None)
-        self._emoji_buttons.clear()
-
-        for idx, (emoji, keywords) in enumerate(emoji_list):
-            btn = QPushButton(emoji)
-            btn.setFixedSize(36, 36)
-            btn.setFont(QFont("Segoe UI Emoji", 16))
-            btn.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn.setToolTip(keywords.split()[0])
-            btn.setStyleSheet(
-                "QPushButton { background: white; border: 1px solid transparent;"
-                " border-radius: 4px; padding: 2px; }"
-                "QPushButton:hover { border-color: #14B8A6; background: #F8FAFC; }"
-            )
-            btn.clicked.connect(lambda checked=False, e=emoji: self._select(e))
-            row, col = divmod(idx, self.COLUMNS)
-            self.grid_layout.addWidget(btn, row, col)
-            self._emoji_buttons.append((btn, keywords))
-
-    def _filter_emoji(self, query: str) -> None:
-        query_lower = query.lower().strip()
-        for btn, keywords in self._emoji_buttons:
-            btn.setVisible(not query_lower or query_lower in keywords)
-
-    def _select(self, emoji: str) -> None:
-        self.selected_emoji = emoji
-        self.accept()
-
+from emoji_picker import EmojiPickerDialog
+from unicode_styles import (
+    apply_bold,
+    apply_bold_italic,
+    apply_italic,
+    apply_unstyle,
+)
 
 # Brand palette
 INK_NAVY = "#0F172A"

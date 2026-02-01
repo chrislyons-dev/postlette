@@ -4,7 +4,8 @@ import string
 
 from PySide6.QtGui import QTextCursor
 
-from main import PostletteWindow, apply_bold_italic, apply_italic
+from main import PostletteWindow
+from unicode_styles import apply_bold_italic, apply_italic
 
 
 class TestApplyItalicFunction:
@@ -85,7 +86,7 @@ class TestApplyBoldItalicFunction:
 
     def test_bold_italic_differs_from_bold_and_italic(self) -> None:
         """Bold-italic should produce different codepoints than bold or italic alone."""
-        from main import apply_bold
+        from unicode_styles import apply_bold
 
         text = "Hello"
         assert apply_bold_italic(text) != apply_bold(text)
