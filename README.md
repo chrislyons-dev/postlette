@@ -1,0 +1,147 @@
+# Postlette
+
+![Postlette logo](https://raw.githubusercontent.com/chrislyons-dev/postlette/main/docs/images/logo-dark-navy.png)
+
+A tiny desktop editor that adds Unicode emphasis for social posts.
+
+Postlette uses Unicode characters, not rich text formatting. Type your post, style selected text with bold or italic, insert separators, and copy the result. Platforms may render these characters differently.
+
+Rendering varies by platform.
+
+Links:
+- Docs: https://chrislyons-dev.github.io/postlette/
+- Repo: https://github.com/chrislyons-dev/postlette
+
+## Setup
+
+Requires Python 3.10+.
+
+```bash
+git clone https://github.com/chrislyons-dev/postlette.git
+cd postlette
+python -m venv .venv
+```
+
+Activate the virtual environment:
+
+```bash
+# Windows
+.venv\Scripts\activate
+
+# macOS / Linux
+source .venv/bin/activate
+```
+
+Install dependencies:
+
+```bash
+pip install -e ".[dev]"
+```
+
+## Usage
+
+```bash
+python main.py
+```
+
+Windows/Linux: use **Ctrl**. macOS: use **Cmd** for shortcuts.
+
+1. Type or paste your post into the editor.
+2. Select text and apply styling (Bold, Italic, etc.) from the toolbar.
+3. Insert em dashes or separators at the cursor.
+4. Use 📂 to open a `.txt` file or 💾 to save your work (shortcuts: `Ctrl+O`, `Ctrl+S`, `Ctrl+Shift+S`).
+5. Click **Copy** (or press `Ctrl+Shift+C`) to copy the result to your clipboard.
+
+Use styling sparingly for readability.
+
+## Test
+
+```bash
+python tasks.py test
+```
+
+## Lint
+
+```bash
+python tasks.py lint    # check
+python tasks.py fix     # auto-fix
+```
+
+## Security audit
+
+```bash
+python tasks.py audit
+```
+
+## Icons
+
+Convert an SVG into PNG + ICO + ICNS (dev-only deps):
+
+```bash
+python tasks.py icons .\docs\images\logo-dark.svg transparent
+```
+
+## Docs (MkDocs)
+
+Serve locally:
+
+```bash
+python tasks.py docs-serve
+```
+
+Build static site:
+
+```bash
+python tasks.py docs-build
+```
+
+GitHub Pages deploys automatically on `main` via `.github/workflows/docs.yml`.
+
+## Release
+
+Release builds are tag-driven and publish to GitHub Releases and PyPI.
+
+1. Update the version in `pyproject.toml`.
+2. Commit the change.
+3. Create and push a tag like `v0.2.0`.
+
+The release workflow will:
+
+- Build Windows and macOS PyInstaller artifacts.
+- Generate SHA-256 checksums.
+- Create a GitHub Release with auto-generated notes.
+- Publish sdist/wheel to PyPI via Trusted Publishing.
+
+See `RELEASING.md` for the full checklist.
+
+## Build
+
+Standalone executables are built with PyInstaller. Each OS requires its own build.
+
+```bash
+python tasks.py build
+```
+
+### Windows
+
+```bash
+pip install pyinstaller
+pyinstaller --onefile --windowed --name postlette --icon docs/images/logo-dark-navy.ico main.py
+```
+
+The executable will be in `dist/postlette.exe`.
+
+### macOS
+
+```bash
+pip install pyinstaller
+pyinstaller --onefile --windowed --name postlette main.py
+```
+
+The app bundle will be in `dist/postlette.app`.
+
+**Note:** Distributing on macOS may require codesigning and notarization.
+
+## License
+
+MIT

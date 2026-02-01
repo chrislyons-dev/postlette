@@ -1,0 +1,40 @@
+[project]
+name = "postlette"
+version = "0.2.0"
+description = "A tiny desktop editor that adds Unicode emphasis for social posts."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+dependencies = [
+    "PySide6>=6.6",
+    "typing-extensions>=4.4",
+]
+
+[project.urls]
+Homepage = "https://chrislyons-dev.github.io/postlette/"
+Repository = "https://github.com/chrislyons-dev/postlette"
+
+[project.optional-dependencies]
+dev = [
+    "build>=1.2",
+    "cairosvg>=2.7",
+    "pillow>=10.0",
+    "mkdocs>=1.5",
+    "mkdocs-material>=9.5",
+    "pytest>=7.0",
+    "ruff>=0.4",
+    "pip-audit>=2.7",
+]
+
+[tool.setuptools]
+py-modules = ["main", "emoji_picker", "emoji_data", "unicode_styles"]
+
+[tool.ruff]
+line-length = 99
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "SIM", "RUF"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
