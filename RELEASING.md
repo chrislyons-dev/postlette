@@ -18,9 +18,17 @@ Short checklist for the tag-driven release workflow.
 
 1. Update `pyproject.toml` version (SemVer).
 2. Commit the version bump.
-3. Create and push a tag that matches the version:
+3. Checkout `main` and pull latest.
+4. Create and push a tag that matches the version:
    - Example: `v0.2.0`
-4. Wait for the `Release` workflow to finish.
+5. Wait for the `Release` workflow to finish.
+
+```bash
+git checkout main
+git pull
+git tag v0.2.0
+git push origin v0.2.0
+```
 
 ## First-time publish (local)
 

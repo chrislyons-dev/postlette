@@ -29,13 +29,15 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev]" pyinstaller
 
-      - name: Build (PyInstaller)
+      - name: Build (PyInstaller, Windows)
+        if: runner.os == 'Windows'
         run: |
-          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            pyinstaller --onefile --windowed --name postlette --icon docs/images/logo-dark-navy.ico main.py
-          else
-            pyinstaller --onefile --windowed --name postlette --icon docs/images/logo-dark-navy.icns main.py
-          fi
+          pyinstaller --onefile --windowed --name postlette --icon docs/images/logo-dark-navy.ico main.py
+
+      - name: Build (PyInstaller, macOS)
+        if: runner.os == 'macOS'
+        run: |
+          pyinstaller --onefile --windowed --name postlette --icon docs/images/logo-dark-navy.icns main.py
 
       - name: Create checksum
         shell: bash
