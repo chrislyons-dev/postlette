@@ -1,0 +1,38 @@
+/* Postlette brand theming for MkDocs Material */
+
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color: #0f172a;
+  --md-accent-fg-color: #14b8a6;
+  --md-default-bg-color: #f8fafc;
+  --md-default-fg-color: #0f172a;
+  --md-default-fg-color--light: #334155;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #0f172a;
+  --md-accent-fg-color: #14b8a6;
+  --md-default-bg-color: #0f172a;
+  --md-default-fg-color: #f8fafc;
+  --md-default-fg-color--light: #cbd5f5;
+}
+
+/* Ensure links are legible against both themes */
+.md-typeset a {
+  color: var(--md-accent-fg-color);
+}
+
+/* Ensure active nav items are visible in dark mode */
+[data-md-color-scheme="slate"] .md-nav__link--active,
+[data-md-color-scheme="slate"] .md-nav__link--active:hover,
+[data-md-color-scheme="slate"] .md-nav__link--active:focus {
+  color: var(--md-accent-fg-color);
+}
+
+/* Always use the dark logo in the header and nav */
+.md-header__button.md-logo img {
+  content: url("../images/logo-dark.svg");
+}
+
+.md-nav__title .md-logo img {
+  content: url("../images/logo-dark.svg");
+}

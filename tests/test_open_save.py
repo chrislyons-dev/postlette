@@ -22,7 +22,7 @@ class TestDirtyTracking:
         assert window.windowTitle() == "Postlette — note.txt"
 
     def test_confirm_discard_prompt(self, qapp, monkeypatch) -> None:
-        window = PostletteWindow()
+        window = PostletteWindow(False)
         window.editor.setPlainText("Hello")
 
         monkeypatch.setattr(

@@ -1,0 +1,43 @@
+site_name: Postlette
+site_description: Unicode polish for social posts.
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/white-balance-sunny
+        name: Switch to light mode
+  font:
+    text: Inter
+    code: Fira Mono
+  logo: images/logo-dark.svg
+  favicon: images/logo-dark.svg
+
+nav:
+  - Overview: index.md
+  - Usage: usage.md
+  - Compatibility: compatibility.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+
+copyright: |
+  © 2026 Chris Lyons · <a href="https://chrislyons.dev">chrislyons.dev</a> ·
+  <a href="https://opensource.org/licenses/MIT">MIT License</a>
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/theme.js

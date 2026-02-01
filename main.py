@@ -30,28 +30,79 @@ from unicode_styles import (
     apply_unstyle,
 )
 
-# Brand palette
+# Brand palette (style guide)
 INK_NAVY = "#0F172A"
 PAPER = "#F8FAFC"
 SLATE = "#334155"
 POLISH_TEAL = "#14B8A6"
+ACCENT_AMBER = "#F59E0B"
+ERROR_ROSE = "#E11D48"
+
+
+def is_dark_mode(app: QApplication) -> bool:
+    try:
+        return app.styleHints().colorScheme() == Qt.ColorScheme.Dark
+    except AttributeError:
+        window_color = app.palette().color(QPalette.ColorRole.Window)
+        return window_color.lightness() < 128
+
+
+def get_theme(dark_mode: bool) -> dict[str, str]:
+    if dark_mode:
+        return {
+            "window_bg": INK_NAVY,
+            "window_text": PAPER,
+            "editor_bg": SLATE,
+            "editor_text": PAPER,
+            "border": SLATE,
+            "primary_bg": PAPER,
+            "primary_text": INK_NAVY,
+            "toolbar_bg": INK_NAVY,
+            "toolbar_text": PAPER,
+            "toolbar_border": SLATE,
+            "status_bg": INK_NAVY,
+            "status_text": PAPER,
+            "focus": POLISH_TEAL,
+            "warning": ACCENT_AMBER,
+            "error": ERROR_ROSE,
+        }
+    return {
+        "window_bg": PAPER,
+        "window_text": INK_NAVY,
+        "editor_bg": "white",
+        "editor_text": INK_NAVY,
+        "border": SLATE,
+        "primary_bg": INK_NAVY,
+        "primary_text": "white",
+        "toolbar_bg": "white",
+        "toolbar_text": INK_NAVY,
+        "toolbar_border": SLATE,
+        "status_bg": PAPER,
+        "status_text": SLATE,
+        "focus": POLISH_TEAL,
+        "warning": ACCENT_AMBER,
+        "error": ERROR_ROSE,
+    }
 
 
 class PostletteWindow(QMainWindow):
     """Main application window with a text editor and copy button."""
 
-    def __init__(self) -> None:
+    def __init__(self, dark_mode: bool) -> None:
         super().__init__()
         self.setWindowTitle("Postlette")
         self.setMinimumSize(520, 400)
         self._current_path: Path | None = None
         self._dirty = False
         self._suspend_dirty = False
+        self._dark_mode = dark_mode
+        self._theme = get_theme(dark_mode)
 
         # Window icon — light variant (dark marks) for the light UI background
-        icon_path = Path(__file__).parent / "docs" / "images" / "logo-light.svg"
-        if icon_path.exists():
-            self.setWindowIcon(QIcon(str(icon_path)))
+        assets_dir = Path(__file__).parent / "docs" / "images"
+        self._icon_dark = assets_dir / "logo-dark.svg"
+        self._icon_light = assets_dir / "logo-light.svg"
+        self._apply_window_icon(dark_mode)
         self._build_ui()
         self._update_char_count()
         self._update_window_title()
@@ -80,6 +131,13 @@ class PostletteWindow(QMainWindow):
         save_btn.setProperty("class", "toolbar-btn")
         save_btn.clicked.connect(self._save_file)
         toolbar.addWidget(save_btn)
+
+        theme_btn = QPushButton("🌓")
+        theme_btn.setToolTip("Toggle theme")
+        theme_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        theme_btn.setProperty("class", "toolbar-btn")
+        theme_btn.clicked.connect(self._toggle_theme)
+        toolbar.addWidget(theme_btn)
 
         em_dash_btn = QPushButton("Em Dash —")
         em_dash_btn.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -191,27 +249,29 @@ class PostletteWindow(QMainWindow):
         self.addAction(save_as_action)
 
         self._apply_stylesheet()
+        self._apply_window_icon(self._dark_mode)
 
     def _apply_stylesheet(self) -> None:
+        theme = self._theme
         self.setStyleSheet(f"""
             QMainWindow {{
-                background-color: {PAPER};
+                background-color: {theme["window_bg"]};
             }}
             QPlainTextEdit {{
-                background-color: white;
-                color: {INK_NAVY};
-                border: 1px solid {SLATE};
+                background-color: {theme["editor_bg"]};
+                color: {theme["editor_text"]};
+                border: 1px solid {theme["border"]};
                 border-radius: 4px;
                 padding: 8px;
-                selection-background-color: {POLISH_TEAL};
+                selection-background-color: {theme["focus"]};
                 selection-color: white;
             }}
             QPlainTextEdit:focus {{
-                border: 2px solid {POLISH_TEAL};
+                border: 2px solid {theme["focus"]};
             }}
             QPushButton {{
-                background-color: {INK_NAVY};
-                color: white;
+                background-color: {theme["primary_bg"]};
+                color: {theme["primary_text"]};
                 border: none;
                 border-radius: 4px;
                 font-weight: 600;
@@ -219,33 +279,62 @@ class PostletteWindow(QMainWindow):
                 padding: 6px 24px;
             }}
             QPushButton:hover {{
-                background-color: {SLATE};
+                background-color: {theme["border"]};
             }}
             QPushButton:pressed {{
-                background-color: {POLISH_TEAL};
+                background-color: {theme["focus"]};
             }}
             QPushButton[class="toolbar-btn"] {{
-                background-color: white;
-                color: {INK_NAVY};
-                border: 1px solid {SLATE};
+                background-color: {theme["toolbar_bg"]};
+                color: {theme["toolbar_text"]};
+                border: 1px solid {theme["toolbar_border"]};
                 font-weight: 600;
                 font-size: 12px;
                 padding: 4px 12px;
             }}
             QPushButton[class="toolbar-btn"]:hover {{
-                background-color: {PAPER};
-                border-color: {POLISH_TEAL};
+                background-color: {theme["window_bg"]};
+                border-color: {theme["focus"]};
             }}
             QPushButton[class="toolbar-btn"]:pressed {{
-                background-color: {POLISH_TEAL};
+                background-color: {theme["focus"]};
                 color: white;
             }}
             QStatusBar {{
-                background-color: {PAPER};
-                color: {SLATE};
+                background-color: {theme["status_bg"]};
+                color: {theme["status_text"]};
                 font-size: 12px;
             }}
         """)
+
+    def _apply_theme(self, dark_mode: bool) -> None:
+        self._dark_mode = dark_mode
+        self._theme = get_theme(dark_mode)
+        app = QApplication.instance()
+        if app is not None:
+            palette = app.palette()
+            palette.setColor(QPalette.ColorRole.Window, QColor(self._theme["window_bg"]))
+            palette.setColor(QPalette.ColorRole.WindowText, QColor(self._theme["window_text"]))
+            app.setPalette(palette)
+        self._apply_stylesheet()
+        self._apply_window_icon(dark_mode)
+        # Nudge the native title bar to refresh immediately.
+        self.setWindowTitle(self.windowTitle())
+        self.repaint()
+
+    def _toggle_theme(self) -> None:
+        self._apply_theme(not self._dark_mode)
+
+    def _apply_window_icon(self, dark_mode: bool) -> None:
+        if dark_mode:
+            primary_icon = self._icon_dark
+            fallback_icon = self._icon_light
+        else:
+            primary_icon = self._icon_light
+            fallback_icon = self._icon_dark
+        icon_path = primary_icon if primary_icon.exists() else fallback_icon
+        if icon_path.exists():
+            self.setWindowIcon(QIcon(str(icon_path)))
 
     def _apply_bold(self) -> None:
         """Apply Unicode bold to the selected text. Do nothing if no selection."""
@@ -400,13 +489,14 @@ class PostletteWindow(QMainWindow):
 def main() -> None:
     app = QApplication(sys.argv)
 
-    # Set application-wide palette based on brand colors
-    palette = app.palette()
-    palette.setColor(QPalette.ColorRole.Window, QColor(PAPER))
-    palette.setColor(QPalette.ColorRole.WindowText, QColor(INK_NAVY))
-    app.setPalette(palette)
+    dark_mode = is_dark_mode(app)
+    theme = get_theme(dark_mode)
 
-    window = PostletteWindow()
+    window = PostletteWindow(dark_mode)
+    palette = app.palette()
+    palette.setColor(QPalette.ColorRole.Window, QColor(theme["window_bg"]))
+    palette.setColor(QPalette.ColorRole.WindowText, QColor(theme["window_text"]))
+    app.setPalette(palette)
     window.show()
     sys.exit(app.exec())
 

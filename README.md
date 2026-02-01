@@ -65,6 +65,37 @@ python tasks.py fix     # auto-fix
 python tasks.py audit
 ```
 
+## Docs (MkDocs)
+
+Serve locally:
+
+```bash
+python tasks.py docs-serve
+```
+
+Build static site:
+
+```bash
+python tasks.py docs-build
+```
+
+GitHub Pages deploys automatically on `main` via `.github/workflows/docs.yml`.
+
+## Release
+
+Release builds are tag-driven and publish to GitHub Releases and PyPI.
+
+1. Update the version in `pyproject.toml`.
+2. Commit the change.
+3. Create and push a tag like `v0.2.0`.
+
+The release workflow will:
+
+- Build Windows and macOS PyInstaller artifacts.
+- Generate SHA-256 checksums.
+- Create a GitHub Release with auto-generated notes.
+- Publish sdist/wheel to PyPI via Trusted Publishing.
+
 ## Build
 
 Standalone executables are built with PyInstaller. Each OS requires its own build.

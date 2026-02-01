@@ -23,6 +23,8 @@ TASKS: dict[str, list[list[str]]] = {
         [PYTHON, "-m", "pip_audit"],
     ],
     "audit": [[PYTHON, "-m", "pip_audit"]],
+    "docs-serve": [[PYTHON, "-m", "mkdocs", "serve"]],
+    "docs-build": [[PYTHON, "-m", "mkdocs", "build", "--strict"]],
     "run": [[PYTHON, "main.py"]],
 }
 

@@ -11,6 +11,9 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "build>=1.2",
+    "mkdocs>=1.5",
+    "mkdocs-material>=9.5",
     "pytest>=7.0",
     "ruff>=0.4",
     "pip-audit>=2.7",
