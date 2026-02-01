@@ -1,11 +1,13 @@
 """Postlette — Unicode polish for social posts."""
 
 import sys
+from pathlib import Path
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QAction, QColor, QFont, QPalette
+from PySide6.QtGui import QAction, QColor, QFont, QIcon, QPalette
 from PySide6.QtWidgets import (
     QApplication,
+    QHBoxLayout,
     QLabel,
     QMainWindow,
     QPlainTextEdit,
@@ -29,6 +31,11 @@ class PostletteWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Postlette")
         self.setMinimumSize(520, 400)
+
+        # Window icon — light variant (dark marks) for the light UI background
+        icon_path = Path(__file__).parent / "docs" / "images" / "logo-light.svg"
+        if icon_path.exists():
+            self.setWindowIcon(QIcon(str(icon_path)))
         self._build_ui()
         self._update_char_count()
 
@@ -38,6 +45,25 @@ class PostletteWindow(QMainWindow):
         layout = QVBoxLayout(central)
         layout.setContentsMargins(16, 16, 16, 16)
         layout.setSpacing(12)
+
+        # Toolbar
+        toolbar = QHBoxLayout()
+        toolbar.setSpacing(6)
+
+        em_dash_btn = QPushButton("Em Dash —")
+        em_dash_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        em_dash_btn.setProperty("class", "toolbar-btn")
+        em_dash_btn.clicked.connect(lambda: self._insert_text("—"))
+        toolbar.addWidget(em_dash_btn)
+
+        separator_btn = QPushButton("Separator ────")
+        separator_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        separator_btn.setProperty("class", "toolbar-btn")
+        separator_btn.clicked.connect(lambda: self._insert_text("────────"))
+        toolbar.addWidget(separator_btn)
+
+        toolbar.addStretch()
+        layout.addLayout(toolbar)
 
         # Editor
         self.editor = QPlainTextEdit()
@@ -102,12 +128,35 @@ class PostletteWindow(QMainWindow):
             QPushButton:pressed {{
                 background-color: {POLISH_TEAL};
             }}
+            QPushButton[class="toolbar-btn"] {{
+                background-color: white;
+                color: {INK_NAVY};
+                border: 1px solid {SLATE};
+                font-weight: 600;
+                font-size: 12px;
+                padding: 4px 12px;
+            }}
+            QPushButton[class="toolbar-btn"]:hover {{
+                background-color: {PAPER};
+                border-color: {POLISH_TEAL};
+            }}
+            QPushButton[class="toolbar-btn"]:pressed {{
+                background-color: {POLISH_TEAL};
+                color: white;
+            }}
             QStatusBar {{
                 background-color: {PAPER};
                 color: {SLATE};
                 font-size: 12px;
             }}
         """)
+
+    def _insert_text(self, text: str) -> None:
+        """Insert text at the current cursor position, replacing any selection."""
+        cursor = self.editor.textCursor()
+        cursor.insertText(text)
+        self.editor.setTextCursor(cursor)
+        self.editor.setFocus()
 
     def _copy_to_clipboard(self) -> None:
         text = self.editor.toPlainText()
