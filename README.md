@@ -59,6 +59,12 @@ python tasks.py lint    # check
 python tasks.py fix     # auto-fix
 ```
 
+## Security audit
+
+```bash
+python tasks.py audit
+```
+
 ## Build
 
 Standalone executables are built with PyInstaller. Each OS requires its own build.

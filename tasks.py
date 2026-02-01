@@ -20,7 +20,9 @@ TASKS: dict[str, list[list[str]]] = {
         [PYTHON, "-m", "ruff", "format", "."],
         [PYTHON, "-m", "ruff", "check", "--fix", "."],
         [PYTHON, "-m", "pytest", "tests/", "-v"],
+        [PYTHON, "-m", "pip_audit"],
     ],
+    "audit": [[PYTHON, "-m", "pip_audit"]],
     "run": [[PYTHON, "main.py"]],
 }
 
